@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import slotRoutes from './routes/slot.routes';
+import bookingRoutes from './routes/booking.routes';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 // API Routes
 app.use('/api/slots', slotRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // Start server
 app.listen(PORT, () => {
