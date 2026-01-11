@@ -1,65 +1,142 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { useAvailableSlots } from '@/hooks/use-slots';
+import { SlotGrid } from '@/components/slot-grid';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+// Hardcoded for now - we'll make this dynamic later
+const COURT_IDS = {
+  cricket: '43da664f-fbd4-491f-97c4-832c27368d8d',
+  football: '8e543f07-1794-4682-b28b-cf47e340863d',
+  badminton: '6623acb5-99b9-4496-9858-a3d901aaa1b5',
+};
 
 export default function Home() {
+  const [selectedCourt, setSelectedCourt] = useState<string>(COURT_IDS.cricket);
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
+
+  const { data: slots, isLoading, error } = useAvailableSlots(selectedCourt, selectedDate);
+
+  const handleDateChange = (days: number) => {
+    const newDate = new Date();
+    newDate.setDate(newDate.getDate() + days);
+    setSelectedDate(newDate.toISOString().split('T')[0]);
+  };
+
+  const handleSelectSlot = (slotId: string) => {
+    console.log('Selected slot:', slotId);
+    // We'll implement booking in Phase 3
+    alert(`Slot ${slotId} selected! Booking functionality coming in Phase 3.`);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2">Turf Booking System</h1>
+          <p className="text-muted-foreground">
+            Book your favorite sports court with ease
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Court Selection */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Select Court</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant={selectedCourt === COURT_IDS.cricket ? 'default' : 'outline'}
+                onClick={() => setSelectedCourt(COURT_IDS.cricket)}
+              >
+                🏏 Cricket Court
+              </Button>
+              <Button
+                variant={selectedCourt === COURT_IDS.football ? 'default' : 'outline'}
+                onClick={() => setSelectedCourt(COURT_IDS.football)}
+              >
+                ⚽ Football Court
+              </Button>
+              <Button
+                variant={selectedCourt === COURT_IDS.badminton ? 'default' : 'outline'}
+                onClick={() => setSelectedCourt(COURT_IDS.badminton)}
+              >
+                🏸 Badminton Court
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Date Selection */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Select Date</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant={selectedDate === new Date().toISOString().split('T')[0] ? 'default' : 'outline'}
+                onClick={() => handleDateChange(0)}
+              >
+                Today
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleDateChange(1)}
+              >
+                Tomorrow
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleDateChange(2)}
+              >
+                Day After
+              </Button>
+              <div className="flex items-center ml-auto">
+                <span className="text-sm font-medium">
+                  {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Available Slots */}
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Available Slots</h2>
+          
+          {isLoading && (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center">Loading available slots...</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {error && (
+            <Card className="border-destructive">
+              <CardContent className="pt-6">
+                <p className="text-center text-destructive">
+                  Error loading slots: {error.message}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {slots && <SlotGrid slots={slots} onSelectSlot={handleSelectSlot} />}
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
