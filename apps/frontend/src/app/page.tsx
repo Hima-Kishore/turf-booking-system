@@ -3,23 +3,39 @@
 import { useState } from 'react';
 import { useAvailableSlots } from '@/hooks/use-slots';
 import { SlotGrid } from '@/components/slot-grid';
+import { BookingDialog } from '@/components/booking-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import type { SlotResponse } from '@turf-booking/shared-types';
 
-// Hardcoded for now - we'll make this dynamic later
+// Replace these with actual UUIDs from your database
 const COURT_IDS = {
-  cricket: '43da664f-fbd4-491f-97c4-832c27368d8d',
-  football: '8e543f07-1794-4682-b28b-cf47e340863d',
-  badminton: '6623acb5-99b9-4496-9858-a3d901aaa1b5',
+  cricket: '00000000-0000-0000-0000-000000000100',
+  football: '00000000-0000-0000-0000-000000000200',
+  badminton: '00000000-0000-0000-0000-000000000300',
 };
+
+// Hardcoded user ID for now (in Phase 4, we'll add authentication)
+const USER_ID = '00000000-0000-0000-0000-000000000001';
 
 export default function Home() {
   const [selectedCourt, setSelectedCourt] = useState<string>(COURT_IDS.cricket);
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
+  const [selectedSlot, setSelectedSlot] = useState<SlotResponse | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: slots, isLoading, error } = useAvailableSlots(selectedCourt, selectedDate);
+
+  console.log('🔍 Debug Info:', {
+  selectedCourt,
+  selectedDate,
+  isLoading,
+  error: error?.message,
+  slotsCount: slots?.length,
+  slots,
+});
 
   const handleDateChange = (days: number) => {
     const newDate = new Date();
@@ -27,10 +43,16 @@ export default function Home() {
     setSelectedDate(newDate.toISOString().split('T')[0]);
   };
 
-  const handleSelectSlot = (slotId: string) => {
-    console.log('Selected slot:', slotId);
-    // We'll implement booking in Phase 3
-    alert(`Slot ${slotId} selected! Booking functionality coming in Phase 3.`);
+  const handleSelectSlot = (slot: SlotResponse) => {
+    setSelectedSlot(slot);
+    setDialogOpen(true);
+  };
+
+  const getCourtName = (courtId: string) => {
+    if (courtId === COURT_IDS.cricket) return '🏏 Cricket Court';
+    if (courtId === COURT_IDS.football) return '⚽ Football Court';
+    if (courtId === COURT_IDS.badminton) return '🏸 Badminton Court';
+    return 'Court';
   };
 
   return (
@@ -38,7 +60,9 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">Turf Booking System</h1>
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Turf Booking System
+          </h1>
           <p className="text-muted-foreground">
             Book your favorite sports court with ease
           </p>
@@ -52,18 +76,21 @@ export default function Home() {
           <CardContent>
             <div className="flex gap-2 flex-wrap">
               <Button
+                size="lg"
                 variant={selectedCourt === COURT_IDS.cricket ? 'default' : 'outline'}
                 onClick={() => setSelectedCourt(COURT_IDS.cricket)}
               >
                 🏏 Cricket Court
               </Button>
               <Button
+                size="lg"
                 variant={selectedCourt === COURT_IDS.football ? 'default' : 'outline'}
                 onClick={() => setSelectedCourt(COURT_IDS.football)}
               >
                 ⚽ Football Court
               </Button>
               <Button
+                size="lg"
                 variant={selectedCourt === COURT_IDS.badminton ? 'default' : 'outline'}
                 onClick={() => setSelectedCourt(COURT_IDS.badminton)}
               >
@@ -79,20 +106,27 @@ export default function Home() {
             <CardTitle>Select Date</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
               <Button
-                variant={selectedDate === new Date().toISOString().split('T')[0] ? 'default' : 'outline'}
+                size="lg"
+                variant={
+                  selectedDate === new Date().toISOString().split('T')[0]
+                    ? 'default'
+                    : 'outline'
+                }
                 onClick={() => handleDateChange(0)}
               >
                 Today
               </Button>
               <Button
+                size="lg"
                 variant="outline"
                 onClick={() => handleDateChange(1)}
               >
                 Tomorrow
               </Button>
               <Button
+                size="lg"
                 variant="outline"
                 onClick={() => handleDateChange(2)}
               >
@@ -114,15 +148,16 @@ export default function Home() {
 
         {/* Available Slots */}
         <div>
-          <h2 className="text-2xl font-semibold mb-4">Available Slots</h2>
-          
-          {isLoading && (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-center">Loading available slots...</p>
-              </CardContent>
-            </Card>
-          )}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold">
+              Available Slots - {getCourtName(selectedCourt)}
+            </h2>
+            {slots && slots.length > 0 && (
+              <span className="text-sm text-muted-foreground">
+                {slots.length} slot{slots.length !== 1 ? 's' : ''} available
+              </span>
+            )}
+          </div>
 
           {error && (
             <Card className="border-destructive">
@@ -134,9 +169,21 @@ export default function Home() {
             </Card>
           )}
 
-          {slots && <SlotGrid slots={slots} onSelectSlot={handleSelectSlot} />}
+          <SlotGrid
+            slots={slots || []}
+            onSelectSlot={handleSelectSlot}
+            isLoading={isLoading}
+          />
         </div>
       </div>
+
+      {/* Booking Dialog */}
+      <BookingDialog
+        slot={selectedSlot}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        userId={USER_ID}
+      />
     </main>
   );
 }
