@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -24,30 +25,32 @@ function toDateOnly(dateString: string): Date {
 async function main() {
   console.log('🌱 Starting database seed...');
 
-  // Clear transactional data
+  // Clear all data
   await prisma.booking.deleteMany();
   await prisma.slot.deleteMany();
-
-  // Clear and recreate master data (one-time setup)
   await prisma.court.deleteMany();
   await prisma.turf.deleteMany();
   await prisma.user.deleteMany();
 
   console.log('🗑️  Cleared all data');
 
-  // Create user with fixed ID
+  // Hash password
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
+  // Create user with password
   const user = await prisma.user.create({
     data: {
       id: FIXED_IDS.user,
       email: 'john.doe@example.com',
       name: 'John Doe',
       phone: '+1234567890',
+      password: hashedPassword,
     },
   });
 
   console.log('✅ Created user:', user.name);
 
-  // Create turf with fixed ID
+  // Create turf
   const turf = await prisma.turf.create({
     data: {
       id: FIXED_IDS.turf,
@@ -59,7 +62,7 @@ async function main() {
 
   console.log('✅ Created turf:', turf.name);
 
-  // Create courts with fixed IDs
+  // Create courts
   const cricketCourt = await prisma.court.create({
     data: {
       id: FIXED_IDS.cricketCourt,
@@ -92,7 +95,7 @@ async function main() {
 
   console.log('✅ Created courts');
 
-  // Create fresh slots for next 7 days
+  // Create slots for next 7 days
   const dateStrings = Array.from({ length: 7 }, (_, i) => getDateString(i));
 
   const timeSlots = [
@@ -134,7 +137,10 @@ async function main() {
   console.log(`   From: ${dateStrings[0]}`);
   console.log(`   To: ${dateStrings[6]}`);
   console.log('\n🎉 Database seeded successfully!');
-  console.log('\n📝 COPY THESE FIXED IDs TO YOUR FRONTEND (one-time only):');
+  console.log('\n📝 Test credentials:');
+  console.log(`   Email: john.doe@example.com`);
+  console.log(`   Password: password123`);
+  console.log('\n📝 Fixed IDs:');
   console.log(`\nconst COURT_IDS = {`);
   console.log(`  cricket: '${FIXED_IDS.cricketCourt}',`);
   console.log(`  football: '${FIXED_IDS.footballCourt}',`);
