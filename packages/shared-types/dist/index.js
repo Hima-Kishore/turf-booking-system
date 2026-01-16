@@ -4,3 +4,5 @@ export { slotAvailabilityQuerySchema, slotResponseSchema, slotsResponseSchema, }
 export { createBookingSchema, bookingResponseSchema, } from './schemas/booking.schema';
 // Common schemas
 export { apiResponseSchema, errorResponseSchema, } from './schemas/common.schema';
+// Auth schemas
+export { loginSchema, signupSchema, authResponseSchema, userProfileSchema, } from './schemas/auth.schema';

@@ -23,3 +23,15 @@ export {
   type ApiResponse,
   type ErrorResponse,
 } from './schemas/common.schema';
+
+// Auth schemas
+export {
+  loginSchema,
+  signupSchema,
+  authResponseSchema,
+  userProfileSchema,
+  type LoginData,
+  type SignupData,
+  type AuthResponse,
+  type UserProfile,
+} from './schemas/auth.schema';
