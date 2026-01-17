@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-// import { Login } from '@/hooks/use-auth-mutations';
+import { useLogin } from '@/hooks/use-auth-mutations';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const login = Login();
+  const login = useLogin();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +63,7 @@ export default function LoginPage() {
               {login.isPending ? 'Logging in...' : 'Login'}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/signup" className="text-primary hover:underline font-medium">
                 Sign up
               </Link>

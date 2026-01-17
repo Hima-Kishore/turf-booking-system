@@ -23,18 +23,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load auth state from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const storedAccessToken = localStorage.getItem('accessToken');
-    const storedRefreshToken = localStorage.getItem('refreshToken');
+    const loadAuthState = () => {
+      const storedUser = localStorage.getItem('user');
+      const storedAccessToken = localStorage.getItem('accessToken');
+      const storedRefreshToken = localStorage.getItem('refreshToken');
 
-    if (storedUser && storedAccessToken && storedRefreshToken) {
-      setUser(JSON.parse(storedUser));
-      setAccessToken(storedAccessToken);
-      setRefreshToken(storedRefreshToken);
-    }
+      if (storedUser && storedAccessToken && storedRefreshToken) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          setAccessToken(storedAccessToken);
+          setRefreshToken(storedRefreshToken);
+        } catch (error) {
+          console.error('Failed to parse stored user data:', error);
+          localStorage.clear();
+        }
+      }
+      setIsLoading(false);
+    };
 
-    setIsLoading(false);
-  }, []);
+    loadAuthState();
+  }, []); // Empty dependency array - runs only once on mount
 
   const login = (newAccessToken: string, newRefreshToken: string, newUser: UserProfile) => {
     setUser(newUser);

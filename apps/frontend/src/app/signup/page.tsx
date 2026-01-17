@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Signup } from '@/hooks/use-auth-mutations';
+import { useSignup } from '@/hooks/use-auth-mutations';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ export default function SignupPage() {
     name: '',
     phone: '',
   });
-  const signup = Signup();
+  const signup = useSignup();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

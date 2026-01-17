@@ -1,45 +1,62 @@
-import { apiClient } from './api-client';
-import type { LoginData, SignupData, AuthResponse, UserProfile } from '@turf-booking/shared-types';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { AuthAPI } from '@/lib/auth-api';
+import { useAuth } from '@/contexts/auth-context';
+import type { LoginData, SignupData } from '@turf-booking/shared-types';
 
-export class AuthAPI {
-  static async login(data: LoginData) {
-    const response = await apiClient.post<AuthResponse>('/api/auth/login', data);
+export function useLogin() {
+  const router = useRouter();
+  const { login } = useAuth();
 
-    if (!response.success) {
-      throw new Error(response.error || 'Login failed');
-    }
+  return useMutation({
+    mutationFn: (data: LoginData) => AuthAPI.login(data),
+    onSuccess: (data) => {
+      login(data.accessToken, data.refreshToken, data.user);
+      toast.success('Welcome back!', {
+        description: `Logged in as ${data.user.name}`,
+      });
+      router.push('/');
+    },
+    onError: (error: Error) => {
+      toast.error('Login Failed', {
+        description: error.message,
+      });
+    },
+  });
+}
 
-    return response.data!;
-  }
+export function useSignup() {
+  const router = useRouter();
+  const { login } = useAuth();
 
-  static async signup(data: SignupData) {
-    const response = await apiClient.post<AuthResponse>('/api/auth/signup', data);
+  return useMutation({
+    mutationFn: (data: SignupData) => AuthAPI.signup(data),
+    onSuccess: (data) => {
+      login(data.accessToken, data.refreshToken, data.user);
+      toast.success('Account Created!', {
+        description: `Welcome, ${data.user.name}!`,
+      });
+      router.push('/');
+    },
+    onError: (error: Error) => {
+      toast.error('Signup Failed', {
+        description: error.message,
+      });
+    },
+  });
+}
 
-    if (!response.success) {
-      throw new Error(response.error || 'Signup failed');
-    }
+export function useLogout() {
+  const router = useRouter();
+  const { logout } = useAuth();
 
-    return response.data!;
-  }
-
-  static async getProfile(accessToken: string) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to fetch profile');
-    }
-
-    return data.data as UserProfile;
-  }
-
-  static async logout() {
-    // In JWT, logout is client-side only
-    return true;
-  }
+  return useMutation({
+    mutationFn: () => AuthAPI.logout(),
+    onSuccess: () => {
+      logout();
+      toast.success('Logged out successfully');
+      router.push('/login');
+    },
+  });
 }
