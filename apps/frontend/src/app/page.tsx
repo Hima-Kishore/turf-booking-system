@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 import { useAvailableSlots } from '@/hooks/use-slots';
 import { SlotGrid } from '@/components/slot-grid';
 import { BookingDialog } from '@/components/booking-dialog';
@@ -8,17 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { SlotResponse } from '@turf-booking/shared-types';
 
-// Replace these with actual UUIDs from your database
 const COURT_IDS = {
   cricket: '00000000-0000-0000-0000-000000000100',
   football: '00000000-0000-0000-0000-000000000200',
   badminton: '00000000-0000-0000-0000-000000000300',
 };
 
-// Hardcoded user ID for now (in Phase 4, we'll add authentication)
-const USER_ID = '00000000-0000-0000-0000-000000000001';
-
 export default function Home() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [selectedCourt, setSelectedCourt] = useState<string>(COURT_IDS.cricket);
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
@@ -28,15 +28,6 @@ export default function Home() {
 
   const { data: slots, isLoading, error } = useAvailableSlots(selectedCourt, selectedDate);
 
-  console.log('🔍 Debug Info:', {
-  selectedCourt,
-  selectedDate,
-  isLoading,
-  error: error?.message,
-  slotsCount: slots?.length,
-  slots,
-});
-
   const handleDateChange = (days: number) => {
     const newDate = new Date();
     newDate.setDate(newDate.getDate() + days);
@@ -44,6 +35,10 @@ export default function Home() {
   };
 
   const handleSelectSlot = (slot: SlotResponse) => {
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
     setSelectedSlot(slot);
     setDialogOpen(true);
   };
@@ -55,16 +50,30 @@ export default function Home() {
     return 'Court';
   };
 
+  if (authLoading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <p className="text-lg text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Turf Booking System
+            Book Your Court
           </h1>
           <p className="text-muted-foreground">
-            Book your favorite sports court with ease
+            {isAuthenticated
+              ? `Welcome back, ${user?.name}!`
+              : 'Please login to book a slot'}
           </p>
         </div>
 
@@ -159,6 +168,24 @@ export default function Home() {
             )}
           </div>
 
+          {!isAuthenticated && (
+            <Card className="mb-4 border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+              <CardContent className="pt-6">
+                <p className="text-center">
+                  Please{' '}
+                  <Button
+                    variant="link"
+                    className="px-1"
+                    onClick={() => router.push('/login')}
+                  >
+                    login
+                  </Button>{' '}
+                  to book a slot
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {error && (
             <Card className="border-destructive">
               <CardContent className="pt-6">
@@ -178,12 +205,14 @@ export default function Home() {
       </div>
 
       {/* Booking Dialog */}
-      <BookingDialog
-        slot={selectedSlot}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        userId={USER_ID}
-      />
+      {isAuthenticated && user && (
+        <BookingDialog
+          slot={selectedSlot}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          userId={user.id}
+        />
+      )}
     </main>
   );
 }
