@@ -14,8 +14,19 @@ export class BookingController {
    */
   createBooking = async (req: Request, res: Response) => {
     try {
-      // Validate request body
-      const validation = createBookingSchema.safeParse(req.body);
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Unauthorized',
+          message: 'User not authenticated',
+        });
+      }
+
+      // Validate request body (only slotId needed, userId from token)
+      const validation = createBookingSchema.safeParse({
+        userId: req.user.userId, // Use authenticated user ID
+        slotId: req.body.slotId,
+      });
 
       if (!validation.success) {
         return res.status(400).json({
@@ -27,7 +38,6 @@ export class BookingController {
 
       const { userId, slotId } = validation.data;
 
-      // Create booking
       const booking = await this.bookingService.createBooking(userId, slotId);
 
       return res.status(201).json({
@@ -38,7 +48,6 @@ export class BookingController {
     } catch (error) {
       console.error('Error creating booking:', error);
 
-      // Handle known errors
       if (error instanceof Error) {
         if (
           error.message.includes('already booked') ||
@@ -53,11 +62,40 @@ export class BookingController {
         }
       }
 
-      // Unknown error
       return res.status(500).json({
         success: false,
         error: 'Internal server error',
         message: 'Failed to create booking',
+      });
+    }
+  };
+
+  /**
+   * GET /api/bookings/my - Get current user's bookings
+   */
+  getMyBookings = async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Unauthorized',
+          message: 'User not authenticated',
+        });
+      }
+
+      const bookings = await this.bookingService.getUserBookings(req.user.userId);
+
+      return res.json({
+        success: true,
+        data: bookings,
+        message: `Found ${bookings.length} bookings`,
+      });
+    } catch (error) {
+      console.error('Error fetching user bookings:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        message: 'Failed to fetch bookings',
       });
     }
   };
@@ -91,18 +129,18 @@ export class BookingController {
    */
   cancelBooking = async (req: Request, res: Response) => {
     try {
-      const { bookingId } = req.params;
-      const { userId } = req.body;
-
-      if (!userId) {
-        return res.status(400).json({
+      if (!req.user) {
+        return res.status(401).json({
           success: false,
-          error: 'Validation failed',
-          message: 'userId is required',
+          error: 'Unauthorized',
+          message: 'User not authenticated',
         });
       }
 
-      await this.bookingService.cancelBooking(bookingId, userId);
+      const { bookingId } = req.params;
+
+      // Use authenticated user's ID
+      await this.bookingService.cancelBooking(bookingId, req.user.userId);
 
       return res.json({
         success: true,
