@@ -15,11 +15,15 @@ export class ApiClient {
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
 
+    // Get token from localStorage (if available)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+
     try {
       const response = await fetch(url, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
           ...options?.headers,
         },
       });
@@ -58,6 +62,12 @@ export class ApiClient {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: JSON.stringify(body),
+    });
+  }
+
+  async delete<T>(endpoint: string) {
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
     });
   }
 }

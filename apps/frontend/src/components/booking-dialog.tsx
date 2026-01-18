@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,25 +17,22 @@ interface BookingDialogProps {
   slot: SlotResponse | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: string;
+  userId: string; // Keep for backward compatibility but not used
 }
 
 export function BookingDialog({
   slot,
   open,
   onOpenChange,
-  userId,
 }: BookingDialogProps) {
   const createBooking = useCreateBooking();
 
   if (!slot) return null;
 
   const handleConfirm = async () => {
+    // Only send slotId, userId comes from auth token
     createBooking.mutate(
-      {
-        userId,
-        slotId: slot.id,
-      },
+      { slotId: slot.id },
       {
         onSuccess: () => {
           onOpenChange(false);
