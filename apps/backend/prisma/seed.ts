@@ -25,7 +25,6 @@ function toDateOnly(dateString: string): Date {
 async function main() {
   console.log('🌱 Starting database seed...');
 
-  // Clear all data
   await prisma.booking.deleteMany();
   await prisma.slot.deleteMany();
   await prisma.court.deleteMany();
@@ -34,10 +33,8 @@ async function main() {
 
   console.log('🗑️  Cleared all data');
 
-  // Hash password
   const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // Create user with password
   const user = await prisma.user.create({
     data: {
       id: FIXED_IDS.user,
@@ -50,19 +47,22 @@ async function main() {
 
   console.log('✅ Created user:', user.name);
 
-  // Create turf
   const turf = await prisma.turf.create({
     data: {
       id: FIXED_IDS.turf,
       name: 'City Sports Arena',
       address: '123 Main Street, Downtown',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      pincode: '560001',
       description: 'Premium sports facility with multiple courts',
+      latitude: 12.9716,
+      longitude: 77.5946,
     },
   });
 
   console.log('✅ Created turf:', turf.name);
 
-  // Create courts
   const cricketCourt = await prisma.court.create({
     data: {
       id: FIXED_IDS.cricketCourt,
@@ -95,7 +95,6 @@ async function main() {
 
   console.log('✅ Created courts');
 
-  // Create slots for next 7 days
   const dateStrings = Array.from({ length: 7 }, (_, i) => getDateString(i));
 
   const timeSlots = [

@@ -25,12 +25,18 @@ model Turf {
   id          String   @id @default(uuid())
   name        String
   address     String
+  city        String
+  state       String
+  pincode     String
   description String?
+  latitude    Float?
+  longitude   Float?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   courts      Court[]
   
+  @@index([city, state])
   @@map("turfs")
 }
 

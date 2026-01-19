@@ -1,18 +1,13 @@
 import { prisma } from '../lib/prisma';
-import { Prisma } from '@prisma/client';
 
 export class BookingService {
   /**
    * Create a booking with proper race condition handling
-   * Uses PostgreSQL transactions and row-level locking
    */
   async createBooking(userId: string, slotId: string) {
     try {
-      // Use a transaction to ensure atomicity
       const result = await prisma.$transaction(
         async (tx) => {
-          // Step 1: Lock the slot row with FOR UPDATE
-          // This prevents other transactions from reading/modifying this row
           const slot = await tx.slot.findUnique({
             where: { id: slotId },
             include: {
@@ -24,27 +19,27 @@ export class BookingService {
             },
           });
 
-          // Step 2: Validate slot exists
           if (!slot) {
             throw new Error('Slot not found');
           }
 
-          // Step 3: Check if already booked
           if (slot.isBooked) {
             throw new Error('Slot is already booked');
           }
 
-          // Step 4: Check if slot is in the past
-          const slotDate = new Date(slot.date);
-          slotDate.setUTCHours(0, 0, 0, 0);
-          const today = new Date();
-          today.setUTCHours(0, 0, 0, 0);
+          const slotDateTime = new Date(slot.date);
+          slotDateTime.setUTCHours(parseInt(slot.startTime.split(':')[0]), 0, 0, 0);
+          const now = new Date();
 
-          if (slotDate < today) {
+          if (slotDateTime < now) {
             throw new Error('Cannot book slots in the past');
           }
 
-          // Step 5: Create the booking
+          const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+          if (slotDateTime < twoHoursFromNow) {
+            throw new Error('Cannot book slots less than 2 hours in advance');
+          }
+
           const booking = await tx.booking.create({
             data: {
               userId,
@@ -63,18 +58,12 @@ export class BookingService {
             },
           });
 
-          // Step 6: Mark slot as booked
           await tx.slot.update({
             where: { id: slotId },
             data: { isBooked: true },
           });
 
           return booking;
-        },
-        {
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-          maxWait: 5000, // 5 seconds
-          timeout: 10000, // 10 seconds
         }
       );
 
@@ -94,20 +83,10 @@ export class BookingService {
         },
       };
     } catch (error) {
-      // Handle specific Prisma errors
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        // P2002: Unique constraint violation (duplicate booking)
-        if (error.code === 'P2002') {
-          throw new Error('Slot is already booked');
-        }
-        // P2025: Record not found
-        if (error.code === 'P2025') {
-          throw new Error('Slot not found');
-        }
+      if (error instanceof Error) {
+        throw error;
       }
-
-      // Re-throw the error for controller to handle
-      throw error;
+      throw new Error('Unknown error occurred');
     }
   }
 
@@ -156,11 +135,10 @@ export class BookingService {
   }
 
   /**
-   * Cancel a booking
+   * Cancel a booking with 24-hour policy
    */
   async cancelBooking(bookingId: string, userId: string) {
     return await prisma.$transaction(async (tx) => {
-      // Find booking
       const booking = await tx.booking.findUnique({
         where: { id: bookingId },
         include: { slot: true },
@@ -170,23 +148,28 @@ export class BookingService {
         throw new Error('Booking not found');
       }
 
-      // Verify ownership
       if (booking.userId !== userId) {
         throw new Error('Unauthorized: Cannot cancel another user\'s booking');
       }
 
-      // Check if already cancelled
       if (booking.status === 'cancelled') {
         throw new Error('Booking is already cancelled');
       }
 
-      // Update booking status
+      const slotDateTime = new Date(booking.slot.date);
+      slotDateTime.setUTCHours(parseInt(booking.slot.startTime.split(':')[0]), 0, 0, 0);
+      const now = new Date();
+      const hoursUntilSlot = (slotDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+      if (hoursUntilSlot < 24) {
+        throw new Error('Cannot cancel bookings less than 24 hours before the slot time. No refund will be provided.');
+      }
+
       const updatedBooking = await tx.booking.update({
         where: { id: bookingId },
         data: { status: 'cancelled' },
       });
 
-      // Free up the slot
       await tx.slot.update({
         where: { id: booking.slotId },
         data: { isBooked: false },
