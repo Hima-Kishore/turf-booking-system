@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Calendar } from 'lucide-react';
+import { User, LogOut, Calendar, Search } from 'lucide-react';
 
 export function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -42,6 +42,15 @@ export function Navbar() {
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <>
+              <Button
+                variant="ghost"
+                onClick={() => router.push('/search')}
+                className="gap-2"
+              >
+                <Search className="h-4 w-4" />
+                Search
+              </Button>
+
               <Button
                 variant="ghost"
                 onClick={() => router.push('/my-bookings')}
