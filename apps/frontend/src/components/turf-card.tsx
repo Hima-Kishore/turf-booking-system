@@ -1,5 +1,7 @@
 'use client';
 
+import { StarRating } from './star-rating';
+import { useTurfRating } from '@/hooks/use-reviews';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +28,7 @@ interface TurfCardProps {
 
 export function TurfCard({ turf }: TurfCardProps) {
   const router = useRouter();
+  const { data: ratingData } = useTurfRating(turf.id);
 
   const totalAvailableSlots = turf.courts.reduce(
     (sum, court) => sum + court.availableSlotsCount,
@@ -65,6 +68,16 @@ export function TurfCard({ turf }: TurfCardProps) {
           <p className="text-sm text-muted-foreground line-clamp-2">
             {turf.description}
           </p>
+        )}
+
+        {/* Rating */}
+        {ratingData && ratingData.totalReviews > 0 && (
+          <div className="flex items-center gap-2">
+            <StarRating rating={ratingData.averageRating} showNumber />
+            <span className="text-xs text-muted-foreground">
+              ({ratingData.totalReviews} review{ratingData.totalReviews !== 1 ? 's' : ''})
+            </span>
+          </div>
         )}
 
         {/* Address */}

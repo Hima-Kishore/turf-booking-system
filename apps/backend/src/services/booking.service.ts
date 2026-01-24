@@ -1,9 +1,6 @@
 import { prisma } from '../lib/prisma';
 
 export class BookingService {
-  /**
-   * Create a booking with proper race condition handling
-   */
   async createBooking(userId: string, slotId: string) {
     try {
       const result = await prisma.$transaction(
@@ -90,49 +87,49 @@ export class BookingService {
     }
   }
 
-  /**
-   * Get user's bookings
-   */
   async getUserBookings(userId: string) {
-    const bookings = await prisma.booking.findMany({
-      where: { userId },
-      include: {
-        slot: {
-          include: {
-            court: {
-              include: {
-                turf: true,
-              },
+  const bookings = await prisma.booking.findMany({
+    where: { userId },
+    include: {
+      slot: {
+        include: {
+          court: {
+            include: {
+              turf: true,
             },
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+      review: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
 
-    return bookings.map((booking) => ({
-      id: booking.id,
-      status: booking.status,
-      totalPrice: booking.totalPrice,
-      paymentStatus: booking.paymentStatus,
-      createdAt: booking.createdAt.toISOString(),
-      slot: {
-        date: booking.slot.date.toISOString().split('T')[0],
-        startTime: booking.slot.startTime,
-        endTime: booking.slot.endTime,
-      },
-      court: {
-        name: booking.slot.court.name,
-        sportType: booking.slot.court.sportType,
-      },
-      turf: {
-        name: booking.slot.court.turf.name,
-        address: booking.slot.court.turf.address,
-      },
-    }));
-  }
+  return bookings.map((booking) => ({
+    id: booking.id,
+    status: booking.status,
+    totalPrice: booking.totalPrice,
+    paymentStatus: booking.paymentStatus,
+    createdAt: booking.createdAt.toISOString(),
+    hasReview: !!booking.review,
+    slot: {
+      date: booking.slot.date.toISOString().split('T')[0],
+      startTime: booking.slot.startTime,
+      endTime: booking.slot.endTime,
+    },
+    court: {
+      name: booking.slot.court.name,
+      sportType: booking.slot.court.sportType,
+    },
+    turf: {
+      id: booking.slot.court.turf.id,
+      name: booking.slot.court.turf.name,
+      address: booking.slot.court.turf.address,
+    },
+  }));
+}
 
   /**
    * Cancel a booking with 24-hour policy
