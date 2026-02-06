@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Calendar, Search } from 'lucide-react';
+import { User, LogOut, Calendar, Search, Shield } from 'lucide-react';
 
 export function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -50,6 +50,17 @@ export function Navbar() {
                 <Search className="h-4 w-4" />
                 Search
               </Button>
+
+              {user?.email === 'john.doe@example.com' && (
+                <Button
+                  variant="ghost"
+                  onClick={() => router.push('/admin')}
+                  className="gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </Button>
+              )}
 
               <Button
                 variant="ghost"
