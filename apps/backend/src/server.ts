@@ -6,6 +6,7 @@ import bookingRoutes from './routes/booking.routes';
 import authRoutes from './routes/auth.routes';
 import searchRoutes from './routes/search.routes';
 import reviewRoutes from './routes/review.routes';
+import adminRoutes from './routes/admin.routes';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/api/slots', slotRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
