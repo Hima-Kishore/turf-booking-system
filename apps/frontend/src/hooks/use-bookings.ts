@@ -10,6 +10,7 @@ interface BookingHistoryItem {
   totalPrice: number;
   paymentStatus: string;
   createdAt: string;
+  hasReview: boolean;
   slot: {
     date: string;
     startTime: string;
@@ -20,6 +21,7 @@ interface BookingHistoryItem {
     sportType: string;
   };
   turf: {
+    id: string;
     name: string;
     address: string;
   };
